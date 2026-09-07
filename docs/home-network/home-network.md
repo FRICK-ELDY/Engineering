@@ -61,12 +61,12 @@ graph TD
     %% 【VLAN 10GbE 系統】10GbEメインサーバーゾーン
     subgraph VLAN_10GbE_Zone ["VLAN 10GbE (10GbEメインサーバーゾーン)"]
         CRS309["10GbE スイッチ (SFP+)<br>MikroTik CRS309-1G-8S+IN"]
-        QSW1208["10GbE スイッチ (RJ45 / SFP+ Combo)<br>QNAP QSW-1208-8C"]
+        SX3206["10GbE スイッチ (L2+ / RJ45 / SFP+)<br>TP-Link TL-SX3206HPP"]
         QNAP1["メインNAS<br>QNAP TS-632X-4G"]
         QNAP2["バックアップNAS<br>QNAP TS-632X-4G"]
         MS01["Minisforum MS-01<br>【VMホストサーバー】"]
         BE7200["TP-Link BE7200<br>【APモード】"]
-        PC_Dev["作業PC<br>(Windows / Ryzen 9 7950X / 64GB / RTX4090)"]
+        PC_Dev["開発用PC<br>(Windows / Ryzen 9 7950X / 64GB / RTX4090)"]
 
         %% VLAN_10GbEの配下にさらにDNSを配置
         subgraph VLAN_2 ["VLAN 2 (ローカルサービスエリア)"]
@@ -85,17 +85,17 @@ graph TD
     CRS309 === QNAP1
     CRS309 -.-> QNAP2
     CRS309 -.-> MS01
-    CRS309 ===|"SFP+"| QSW1208
+    CRS309 ===|"SFP+"| SX3206
     CRS309 -.-> RPi_4
 
-    QSW1208 ===|"RJ45 10GbE"| DGX1
-    QSW1208 ===|"RJ45 10GbE"| DGX2
-    QSW1208 ===|"RJ45"| BE7200
-    QSW1208 ===|"RJ45"| PC_Dev
+    SX3206 ===|"RJ45 10GbE"| DGX1
+    SX3206 ===|"RJ45 10GbE"| DGX2
+    SX3206 ===|"RJ45"| BE7200
 
     %% DGX Spark ノード間 ConnectX-7 直結（200GbE 計算網）
     DGX1 ===|"QSFP DAC 200GbE"| DGX2
 
+    BE7200 -.-> PC_Dev
     BE7200 -.-> PC_ASUS
     BE7200 -.-> PC_MBP
 
@@ -106,7 +106,7 @@ graph TD
     subgraph Power_Management ["電源管理 & 制御レイヤー"]
         direction LR
         Wall["壁面コンセント<br>一般家庭用 100V"] ===> UPS["UPS (無停電電源装置)<br>CyberPower SX750UJP<br><br>【USBシグナル連携機能】<br>メインNASとUSB接続し、停電時に自動シャットダウンを制御"]
-        UPS === P1["【バッテリー保護コンセント 接続デバイス】<br>・ルーター：YAMAHA RTX1300<br>・スイッチ：MikroTik CRS309-1G-8S+IN<br>・スイッチ：QNAP QSW-1208-8C<br>・メインNAS：QNAP TS-632X-4G<br>・バックアップNAS：QNAP TS-632X-4G<br>・VMホスト：Minisforum MS-01"]
+        UPS === P1["【バッテリー保護コンセント 接続デバイス】<br>・ルーター：YAMAHA RTX1300<br>・スイッチ：MikroTik CRS309-1G-8S+IN<br>・スイッチ：TP-Link TL-SX3206HPP<br>・メインNAS：QNAP TS-632X-4G<br>・バックアップNAS：QNAP TS-632X-4G<br>・VMホスト：Minisforum MS-01"]
     end
 
     %% ノード（デバイス）自体の外枠カラー指定（緑：準備・購入済 / 赤：未購入）
@@ -133,7 +133,7 @@ graph TD
     style UPS stroke:#ef4444,stroke-width:4px
     style P1 stroke:#ef4444,stroke-width:4px
     style CRS309 stroke:#ef4444,stroke-width:4px
-    style QSW1208 stroke:#ef4444,stroke-width:4px
+    style SX3206 stroke:#ef4444,stroke-width:4px
     style QNAP1 stroke:#ef4444,stroke-width:4px
     style QNAP2 stroke:#ef4444,stroke-width:4px
     style MS01 stroke:#ef4444,stroke-width:4px
@@ -148,7 +148,7 @@ graph TD
 | 外部クラウド (VPS) | Misskey、Webサイトテスト、依頼フォームなどの公開サービス |
 | VLAN 1GbE 1 | cloudflared 経由のトンネル接続（Raspberry Pi Zero 2 W） |
 | VLAN 1GbE 2 | マルチOS テスト環境（Windows / Mac / Ubuntu） |
-| VLAN 10GbE | メインサーバー群。SFP+ は CRS309、RJ45 は QSW-1208-8C で収容 |
+| VLAN 10GbE | メインサーバー群。SFP+ は CRS309、RJ45 は TL-SX3206HPP で収容 |
 | VLAN 2 | ローカル DNS / DHCP（Raspberry Pi 4） |
 | VLAN 3 | AI ホストサーバー（NVIDIA DGX Spark Node 1 / Node 2）。10GbE RJ45 は管理網、QSFP はノード間計算網 |
 | 電源管理 | UPS による停電時自動シャットダウン制御 |
@@ -157,26 +157,25 @@ graph TD
 
 | スイッチ | 役割 | ポート |
 |----------|------|--------|
-| MikroTik CRS309-1G-8S+IN | SFP+ コア。ルーター、NAS、VMホスト、QSW 上りを収容 | SFP+ ×8、1GbE RJ45 ×1 |
-| QNAP QSW-1208-8C | RJ45 集約。DGX Spark、BE7200、作業PCを収容 | Combo SFP+/RJ45 ×8、SFP+ ×4 |
+| MikroTik CRS309-1G-8S+IN | SFP+ コア。ルーター、NAS、VMホスト、SX3206 上りを収容 | SFP+ ×8、1GbE RJ45 ×1 |
+| TP-Link TL-SX3206HPP | L2+ マネージド。DGX Spark と BE7200 を RJ45 で収容し、VLAN 分離 | 10GBASE-T ×4（PoE++）、SFP+ ×2 |
 
-CRS309 は SFP+ 中心のため、10GBASE-T（RJ45）機器は QSW-1208-8C の Combo RJ45 に接続する。2 台は SFP+ で上り接続する。
+CRS309 は SFP+ 中心のため、10GBASE-T（RJ45）機器は TL-SX3206HPP に接続する。2 台は SFP+ で上り接続する。
 
 ## ポート割当（購入検討）
 
-### QNAP QSW-1208-8C
+### TP-Link TL-SX3206HPP
 
-アンマネージド 10GbE スイッチ。Combo ポートは SFP+ と RJ45 のどちらか一方のみ使用可能。RJ45 は 10G / 5G / 2.5G / 1G / 100M 自動ネゴシエーション。
+JetStream L2+ マネージド 10GbE スイッチ。RJ45 は 100M / 1G / 2.5G / 5G / 10G 自動ネゴシエーション。各 RJ45 は PoE++（IEEE 802.3bt、最大 60 W/ポート、予算 200 W）対応。802.1Q VLAN でポート単位にゾーンを分けられる。
 
 | ポート | 種別 | 接続先 | 備考 |
 |--------|------|--------|------|
-| Combo 1 | RJ45 | NVIDIA DGX Spark Node 1 | 10GbE 管理 / 通常通信 |
-| Combo 2 | RJ45 | NVIDIA DGX Spark Node 2 | 10GbE 管理 / 通常通信 |
-| Combo 3 | RJ45 | TP-Link BE7200 | AP モード |
-| Combo 4 | RJ45 | 作業PC | 開発用デスクトップ |
-| Combo 5–8 | RJ45 / SFP+ | 予備 | |
-| SFP+ 9 | SFP+ | MikroTik CRS309-1G-8S+IN | 上り（DAC 想定） |
-| SFP+ 10–12 | SFP+ | 予備 | |
+| RJ45 1 | 10GBASE-T | NVIDIA DGX Spark Node 1 | VLAN 3。PoE はオフ |
+| RJ45 2 | 10GBASE-T | NVIDIA DGX Spark Node 2 | VLAN 3。PoE はオフ |
+| RJ45 3 | 10GBASE-T | TP-Link BE7200 | VLAN 10GbE。AP モード |
+| RJ45 4 | 10GBASE-T | 予備 | |
+| SFP+ 1 | SFP+ | MikroTik CRS309-1G-8S+IN | 上りトランク（DAC 想定） |
+| SFP+ 2 | SFP+ | 予備 | |
 
 ### MikroTik CRS309-1G-8S+IN
 
@@ -186,7 +185,7 @@ CRS309 は SFP+ 中心のため、10GBASE-T（RJ45）機器は QSW-1208-8C の C
 | SFP+ | SFP+ | QNAP TS-632X-4G（メイン） | |
 | SFP+ | SFP+ | QNAP TS-632X-4G（バックアップ） | |
 | SFP+ | SFP+ | Minisforum MS-01 | |
-| SFP+ | SFP+ | QNAP QSW-1208-8C | QSW の SFP+ 9 へ |
+| SFP+ | SFP+ | TP-Link TL-SX3206HPP | SX3206 の SFP+ 1 へ |
 | 1GbE RJ45 | RJ45 | Raspberry Pi 4 | プライマリ DNS / DHCP |
 
 ### NVIDIA DGX Spark（Node 1 / Node 2）
@@ -195,19 +194,23 @@ CRS309 は SFP+ 中心のため、10GBASE-T（RJ45）機器は QSW-1208-8C の C
 
 | ノード | ポート | 種別 | 接続先 | 用途 |
 |--------|--------|------|--------|------|
-| Node 1 | RJ45 | 10GbE | QSW-1208-8C Combo 1 | 管理 / 通常通信（NAS、作業PC、インターネット） |
+| Node 1 | RJ45 | 10GbE | TL-SX3206HPP RJ45 1 | 管理 / 通常通信（NAS、インターネット） |
 | Node 1 | QSFP Port 0（左） | ConnectX-7 200GbE | Node 2 QSFP Port 0（左） | ノード間計算網（NCCL / RDMA / RoCE） |
 | Node 1 | QSFP Port 1（右） | ConnectX-7 200GbE | 予備 | 2 本目 DAC で追加リンク可 |
-| Node 2 | RJ45 | 10GbE | QSW-1208-8C Combo 2 | 管理 / 通常通信 |
+| Node 2 | RJ45 | 10GbE | TL-SX3206HPP RJ45 2 | 管理 / 通常通信 |
 | Node 2 | QSFP Port 0（左） | ConnectX-7 200GbE | Node 1 QSFP Port 0（左） | ノード間計算網（NCCL / RDMA / RoCE） |
 | Node 2 | QSFP Port 1（右） | ConnectX-7 200GbE | 予備 | 2 本目 DAC で追加リンク可 |
 
-ケーブルは QSFP112 または QSFP56 のパッシブ DAC（200GbE）。QSW / CRS309 には接続しない。
+ケーブルは QSFP112 または QSFP56 のパッシブ DAC（200GbE）。SX3206 / CRS309 には接続しない。
 
 ## 技術メモ
 
-QSW-1208-8C はアンマネージドのため、配下の RJ45 機器（DGX Spark Node 1 / 2、BE7200、作業PC）は同一 L2 セグメントになる。CRS309 側の上りポート VLAN 設定が、これら全体に適用される。
+TL-SX3206HPP は L2+ マネージドのため、DGX Spark（VLAN 3）と BE7200（VLAN 10GbE）を同一筐体で分離できる。CRS309 との SFP+ 上りはトランクとし、双方で同一 VLAN を通す。
+
+開発用PCおよびノートPCは BE7200（AP モード）配下。SX3206 の RJ45 には直接接続しない。
 
 ConnectX-7 QSFP 直結は 10GbE 管理網とは独立した L2 である。計算トラフィックは QSFP、SSH / パッケージ更新 / NAS アクセスは RJ45 に分離する。
+
+DGX Spark および BE7200 は AC 電源のため、SX3206 の PoE++ は当面オフとする。
 
 <!-- デバイス設定、VLAN 番号、IP レンジ、DNS レコードなど詳細はここに追記 -->
